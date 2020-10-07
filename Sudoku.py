@@ -29,6 +29,22 @@ class SudokuPuzzle:
                 row.append(SudokuPuzzle.Square(value, [], value != 0))
             self.puzzle.append(row)
 
+    def get_square(self, row, column):
+        return self.puzzle[row][column].value
+
+    def set_square(self, row, column, value):
+        self.puzzle[row][column].setValue(value)
+
+    def get_square_fixed(self, row, column):
+        return self.puzzle[row][column].isFixed()
+
+    def no_blanks(self):
+        for i in range (0, 9):
+            for j in range (0, 9):
+                if (self.puzzle[i][j] == 0):
+                    return False
+        return True
+
     def print_puzzle(self):
         for i in range (0, 9):
             row = []

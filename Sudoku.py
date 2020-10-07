@@ -17,6 +17,7 @@ class SudokuPuzzle:
 
         def isFixed(self):
             return self.fixed
+            
 
     def __init__(self, puzzle):
         self.solved = False
@@ -36,7 +37,7 @@ class SudokuPuzzle:
             print (row)
         print()
 
-    def intersect_calculator(self, row, column):
+    def __intersect_calculator(self, row, column):
         rows = []
         columns = []
         square = []
@@ -55,7 +56,7 @@ class SudokuPuzzle:
 
         return [rows, columns, square]
 
-    def valid(self, row, column, value):
+    def __valid(self, row, column, value):
         intersects = self.intersect_calculator(row, column)
         if (value in self.puzzle[row][column].attempts):
             return False
@@ -64,7 +65,7 @@ class SudokuPuzzle:
                 return False
         return True
 
-    def find_value(self, row, column):
+    def __find_value(self, row, column):
         for i in range (1, 10):
             if self.valid(row, column, i):
                 self.puzzle[row][column].setValue(i)
@@ -73,7 +74,7 @@ class SudokuPuzzle:
         self.puzzle[row][column].setValue(0)
         return 0
 
-    def solve_square(self, row, column):
+    def __solve_square(self, row, column):
         self.puzzle[row][column].clearAttempts()
 
         next_row = row

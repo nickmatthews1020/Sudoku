@@ -41,9 +41,12 @@ class SudokuPuzzle:
     def no_blanks(self):
         for i in range (0, 9):
             for j in range (0, 9):
-                if (self.puzzle[i][j] == 0):
+                if (self.puzzle[i][j].value == 0):
                     return False
         return True
+
+    def check_square(self, row, column):
+        return self.puzzle[row][column].isFixed() or self.__valid(row, column, self.puzzle[row][column].value)
 
     def print_puzzle(self):
         for i in range (0, 9):
@@ -73,7 +76,7 @@ class SudokuPuzzle:
         return [rows, columns, square]
 
     def __valid(self, row, column, value):
-        intersects = self.intersect_calculator(row, column)
+        intersects = self.__intersect_calculator(row, column)
         if (value in self.puzzle[row][column].attempts):
             return False
         for i in range(0, 3):
@@ -83,14 +86,14 @@ class SudokuPuzzle:
 
     def __find_value(self, row, column):
         for i in range (1, 10):
-            if self.valid(row, column, i):
+            if self.__valid(row, column, i):
                 self.puzzle[row][column].setValue(i)
                 self.puzzle[row][column].addAttempt(i)
                 return i
         self.puzzle[row][column].setValue(0)
         return 0
 
-    def __solve_square(self, row, column):
+    def __solve_square(self, row, column, gui):
         self.puzzle[row][column].clearAttempts()
 
         next_row = row
@@ -102,13 +105,14 @@ class SudokuPuzzle:
             next_column += 1
 
         if (row == 8 and column == 8):
-            self.find_value(row, column)
+            self.__find_value(row, column)
             self.solved = True
         elif (self.puzzle[row][column].isFixed()):
-            self.solve_square(next_row, next_column)
+            self.__solve_square(next_row, next_column, gui)
         else:
-            while (not(self.solved) and (self.find_value(row, column) != 0)):
-                self.solve_square(next_row, next_column)
+            while (not(self.solved) and (self.__find_value(row, column) != 0)):
+                gui.update_square(row, column)
+                self.__solve_square(next_row, next_column, gui)
 
-    def solve_puzzle(self):
-        self.solve_square(0, 0)
+    def solve_puzzle(self, gui):
+        self.__solve_square(0, 0, gui)

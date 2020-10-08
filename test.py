@@ -1,3 +1,5 @@
+import Sudoku
+
 puzzle0 = [[0, 0, 0, 0, 0, 0, 0, 0, 0],
            [0, 0, 0, 0, 0, 0, 0, 0, 0],
            [0, 0, 0, 0, 0, 0, 0, 0, 0],
@@ -28,9 +30,15 @@ puzzle2 = [[5, 3, 0, 0, 7, 0, 0, 0, 0],
            [0, 0, 0, 4, 1, 9, 0, 0, 5],
            [0, 0, 0, 0, 8, 0, 0, 7, 9]]
 
-#sudoku0 = SudokuPuzzle(puzzle0)
-#sudoku0.solve_puzzle()
+sudoku0 = Sudoku.SudokuPuzzle(puzzle0)
+sudoku0.solve_puzzle()
 
-#sudoku2 = SudokuPuzzle(puzzle2)
-#sudoku2.solve_puzzle()
-#sudoku2.print_puzzle()
+sudoku2 = Sudoku.SudokuPuzzle(puzzle2)
+row = 0
+column = 0
+str = ""
+while (not(sudoku2.solved)):
+    indicies = sudoku2.solve_square_step(row, column, "")
+    row = indicies[0]
+    column = indicies[1]
+sudoku2.print_puzzle()

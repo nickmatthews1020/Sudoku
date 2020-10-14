@@ -17,17 +17,24 @@ class SudokuPuzzle:
 
         def isFixed(self):
             return self.fixed
+
+        def fix(self):
+            self.fixed = True
             
 
-    def __init__(self, puzzle):
+    def __init__(self, puzzle, gui):
         self.solved = False
         self.puzzle = []
+        self.gui = gui
+
         for i in range (0, 9):
             row = []
             for j in range (0, 9):
-                value = puzzle[i][j]
-                row.append(SudokuPuzzle.Square(value, [], value != 0))
+                    value = puzzle[i][j]
+                    row.append(SudokuPuzzle.Square(value, [], value != 0))
             self.puzzle.append(row)
+
+        
 
     def get_square(self, row, column):
         return self.puzzle[row][column].value
@@ -93,7 +100,7 @@ class SudokuPuzzle:
         self.puzzle[row][column].setValue(0)
         return 0
 
-    def __solve_square(self, row, column, gui):
+    def __solve_square(self, row, column):
         self.puzzle[row][column].clearAttempts()
 
         next_row = row
@@ -106,13 +113,22 @@ class SudokuPuzzle:
 
         if (row == 8 and column == 8):
             self.__find_value(row, column)
+            if (self.gui != None):
+                self.gui.update_square(row, column)
             self.solved = True
         elif (self.puzzle[row][column].isFixed()):
-            self.__solve_square(next_row, next_column, gui)
+            self.__solve_square(next_row, next_column)
         else:
             while (not(self.solved) and (self.__find_value(row, column) != 0)):
-                gui.update_square(row, column)
-                self.__solve_square(next_row, next_column, gui)
+                if (self.gui != None):
+                    self.gui.update_square(row, column)
+                self.__solve_square(next_row, next_column)
 
-    def solve_puzzle(self, gui):
-        self.__solve_square(0, 0, gui)
+    def __clear_all_attempts(self):
+        for i in range (0, 9):
+            for j in range (0, 9):
+                self.puzzle[i][j].clearAttempts()
+
+    def solve_puzzle(self):
+        self.__solve_square(0, 0)
+        self.__clear_all_attempts()

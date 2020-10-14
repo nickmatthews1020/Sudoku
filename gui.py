@@ -1,7 +1,10 @@
 import Sudoku
+from Puzzles import Puzzles
 import tkinter as tk
 from tkinter import font as tkfont
 from tkinter import messagebox
+import time
+import random
 
 class SudokuGui:
 
@@ -11,6 +14,10 @@ class SudokuGui:
                 self.squares[row][column].configure(text="")
             else:
                 self.squares[row][column].configure(text=str(value))
+                self.squares[row][column].configure(bg="lightgreen")
+            self.window.update()
+            time.sleep(0.001)
+            self.squares[row][column].configure(bg="white")
             self.window.update()
 
     def __init__(self):
@@ -33,19 +40,21 @@ class SudokuGui:
         frame1 = tk.Frame(master=frame0, height=450)
         frame1.pack(padx=20, pady=20)
 
+        frame2 = tk.Frame(master=frame0, width=450, height=50)
+        frame2.pack(padx=10, pady=(0,20))
+
         def load_puzzle(new_puzzle):
-            puzzle = []
+            self.sudoku = Sudoku.SudokuPuzzle(new_puzzle, self)
+            puzzle = self.sudoku.puzzle
             for i in range(0, 9):
-                puzzle.append([])
                 for j in range(0, 9):
-                    puzzle[i].append(new_puzzle[i][j])
-                    if (new_puzzle[i][j] == 0):
-                        self.squares[i][j].configure(text="")
+                    if (puzzle[i][j].value == 0):
+                        self.squares[i][j].configure(text="", font = normal_font, bg="white")
                     else:
-                        self.squares[i][j].configure(text=new_puzzle[i][j], font = bold_font, bg="lightgray")
-            self.sudoku = Sudoku.SudokuPuzzle(puzzle)
+                        self.squares[i][j].configure(text=puzzle[i][j].value, font = bold_font, bg="lightgray")
 
         def update_square(row, column):
+            self.sudoku.solved = False
             value = self.sudoku.get_square(row, column)
             if (value == 0):
                 self.squares[row][column].configure(text="")
@@ -53,9 +62,7 @@ class SudokuGui:
                 self.squares[row][column].configure(text=str(value))
 
         def clear_puzzle():
-            if (self.check_highlights):
-                reset_all_square_colors()
-                self.check_highlights = False
+            self.sudoku.solved = False
             for i in range(0, 9):
                 for j in range(0, 9):
                     if (not(self.sudoku.get_square_fixed(i, j))):
@@ -63,11 +70,8 @@ class SudokuGui:
                         self.sudoku.set_square(i, j, 0)
 
         def check_puzzle():
-            if (self.check_highlights):
-                reset_all_square_colors()
-                self.check_highlights = False
             if (not(self.sudoku.no_blanks())):
-                messagebox.showwarning(parent=window, title="Incomplete Puzzle", message="Warning: Not all squares are filled.")
+                messagebox.showwarning("Incomplete Puzzle", "Warning: Not all squares are filled.")
             else:
                 solved = True
                 for i in range (0, 9):
@@ -81,41 +85,37 @@ class SudokuGui:
                 else:
                     messagebox.showinfo("", "Puzzle Solved. Your solution is correct.")
 
-        def solve_puzzle(row, column):
-            self.sudoku.puzzle[row][column].clearAttempts()
-
-            next_row = row
-            next_column = column
-            if (column == 8):
-                next_column = 0
-                next_row += 1
+        def solve_puzzle():
+            solved = True
+            for i in range (0, 9):
+                for j in range (0, 9):
+                    if (not(self.sudoku.check_square(i, j))):
+                        solved = False
+            if (not(solved)):
+                clear_puzzle()
+                self.sudoku.solve_puzzle()
+                messagebox.showinfo("", "Puzzle solved.")
             else:
-                next_column += 1
+                messagebox.showwarning("", "Puzzle already solved.")
 
-            if (row == 8 and column == 8):
-                self.sudoku.find_value(row, column)
-                self.sudoku.solved = True
-            elif (self.sudoku.puzzle[row][column].isFixed()):
-                solve_puzzle(next_row, next_column)
-            else:
-                while (not(self.sudoku.solved) and (self.sudoku.find_value(row, column) != 0)):
-                    update_square(row, column)
-                    solve_puzzle(next_row, next_column)
+        def new_puzzle():
+            number = random.randint(0, len(Puzzles.puzzles) - 1)
+            load_puzzle(Puzzles.puzzles[number])
 
-        def update(count):
-            self.squares[1][1].configure(text=str(count))
-            count += 1
-            window.after(2000, lambda i = count: update(i))
 
         def main_button_click(name):
+            if (self.check_highlights):
+                reset_all_square_colors()
+                self.check_highlights = False
+
             if (name == "Clear"):
                 clear_puzzle()
             elif (name == "Check"):
                 check_puzzle()
             elif (name == "Solve"):
-                self.sudoku.solve_puzzle(self)
+                solve_puzzle()
             elif (name == "New"):
-                self.sudoku.print_puzzle()
+                new_puzzle()
 
         def reset_all_square_colors():
             for i in range (0, 9):
@@ -137,7 +137,7 @@ class SudokuGui:
                 self.squares[row][column].configure(relief=tk.RIDGE)
 
                 def handle_number_entry(event):
-                    if (event.char == "" or ord(event.char) == 8): #ascii
+                    if (event.char == "" or ord(event.char) == 8 or ord(event.char) == 48): #ascii
                         self.sudoku.set_square(row, column, 0)
                         unbind_all(bindedkeys)
                     elif (ord(event.char) > 48 and ord(event.char) < 58): #ascii
@@ -192,38 +192,24 @@ class SudokuGui:
                 self.window.bind("<Button>", handle_mouseclick)
                 bindedkeys.append("<Button>")
 
-        for i in range(9):
-            self.squares.append([])
-            for j in range(9):
-                frame = tk.Frame(master=frame1, relief=tk.RIDGE, borderwidth=1)
-                frame.grid(row=i, column=j)
-                button = tk.Button(master=frame, width=5, height=2, font = normal_font,
-                 relief=tk.FLAT, text="", command = lambda row=i, column=j: select_cell(row,column))
-                self.squares[i].append(button)
+        def add_buttons():
+            for i in range(9):
+                self.squares.append([])
+                for j in range(9):
+                    frame = tk.Frame(master=frame1, relief=tk.RIDGE, borderwidth=1)
+                    frame.grid(row=i, column=j)
+                    button = tk.Button(master=frame, width=5, height=2, font = normal_font,
+                    relief=tk.FLAT, text="", command = lambda row=i, column=j: select_cell(row,column))
+                    self.squares[i].append(button)
+                    button.pack()
+            for i in range(4):
+                frame = tk.Frame(master=frame2, relief=tk.GROOVE, borderwidth=2)
+                frame.grid(row=1, column=i, padx=10)
+                button = tk.Button(master=frame, width=10, height=2, text=button_labels[i],
+                command = lambda name=button_labels[i]: main_button_click(name))
+                buttons.append(button)
                 button.pack()
 
-        frame2 = tk.Frame(master=frame0, width=450, height=50)
-        frame2.pack(padx=10, pady=(0,20))
-
-        for i in range(4):
-            frame = tk.Frame(master=frame2, relief=tk.GROOVE, borderwidth=2)
-            frame.grid(row=1, column=i, padx=10)
-            button = tk.Button(master=frame, width=10, height=2, text=button_labels[i],
-            command = lambda name=button_labels[i]: main_button_click(name))
-            buttons.append(button)
-            button.pack()
-
-
-        puzzle0 = [[5, 3, 0, 0, 7, 0, 0, 0, 0],
-                [6, 0, 0, 1, 9, 5, 0, 0, 0],
-                [0, 9, 8, 0, 0, 0, 0, 6, 0],
-                [8, 0, 0, 0, 6, 0, 0, 0, 3],
-                [4, 0, 0, 8, 0, 3, 0, 0, 1],
-                [7, 0, 0, 0, 2, 0, 0, 0, 6],
-                [0, 6, 0, 0, 0, 0, 2, 8, 0],
-                [0, 0, 0, 4, 1, 9, 0, 0, 5],
-                [0, 0, 0, 0, 8, 0, 0, 7, 9]]
-        load_puzzle(puzzle0)
+        add_buttons()
+        new_puzzle()
         self.window.mainloop()
-
-gui = SudokuGui()
